@@ -1,0 +1,19 @@
+# The client is plain browser scripts with no build. This only proves each
+# one still parses; the behaviour is tested from arcade-rooms
+# (games/the-serial/client.test.mjs), which loads game.js from a checkout.
+name: check
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  parse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: for f in *.js; do node --check "$f"; done
