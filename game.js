@@ -3,7 +3,8 @@
  *
  * The server sends each player a `view` (see arcade-rooms/games/the-serial/
  * logic.mjs) and this file draws it. It never knows the script: only the
- * current scene, and only the lines that have aired. All text goes in with
+ * current scene, and only the lines that have aired. A player's own seat is
+ * msg.you; the secret key that holds it stays inside rooms-client.js. All text goes in with
  * textContent, and there is no inline script anywhere (Discord blocks it).
  */
 (function () {
@@ -11,7 +12,6 @@
 
   var GAME = 'the-serial';
   var SVG_NS = 'http://www.w3.org/2000/svg';
-  var FAST = /(^|[?&])pace=fast(&|$)/.test(location.search);
 
   // ------------------------------------------------------------ dom helpers
 
@@ -62,6 +62,7 @@
   var latest = null; // the last { you, players, v } from the server
   var myName = '';
   var joinError = '';
+  var elsewhere = false;
   var ui = {}; // elements and keys of whatever is on screen now
   var task = { down: false, downAt: 0, value: '', dial: 0 };
 
@@ -139,7 +140,7 @@
       ]);
       add(screen, [el('div', { class: 'card' }, [
         el('h1', { text: 'The Serial' }),
-        el('p', { class: 'lead', text: 'You are a guard unit on a dull contract. Your show is on.' }),
+        el('p', { class: 'lead', text: 'You are on the night shift at Marrowlight Station. Your show is on.' }),
         form,
         ui.joinError,
       ])]);
@@ -150,7 +151,7 @@
   function renderLinking() {
     setMode('linking', function () {
       add(screen, [el('div', { class: 'card' }, [
-        el('h2', { text: 'Linking to the crew feed' }),
+        el('h2', { text: 'Clocking in' }),
         el('p', { text: 'This usually takes a moment.' }),
       ])]);
     });
@@ -160,7 +161,7 @@
     setMode('lobby', function () {
       ui.lobbyCrew = el('p', { class: 'lead' });
       var buttons = [el('button', { class: 'btn-main', type: 'button', text: 'Start the episode', on: { click: function () {
-        send(FAST ? { type: 'start', pace: 'fast' } : { type: 'start' });
+        send({ type: 'start' });
       } } })];
       var inviteRow = null;
       if (!window.ArcadeRooms.inDiscord()) {
@@ -190,9 +191,9 @@
       add(screen, [el('div', { class: 'card' }, [
         el('h2', { text: 'On tonight: ' + v.show }),
         el('ul', { class: 'rules' }, [
-          el('li', { text: 'The show plays for the whole crew. After each scene, vote on what happens next.' }),
-          el('li', { text: 'Client emergencies will ring. Respond, and your helmet display covers the show until the job is done.' }),
-          el('li', { text: 'Let one ring out and the crew rating drops. Your call.' }),
+          el('li', { text: 'The show plays for the whole shift. After each scene, vote on what happens next.' }),
+          el('li', { text: 'Job tickets will ring. Respond, and your work tablet covers the show until the job is done.' }),
+          el('li', { text: 'Let one ring out and the shift rating drops. Your call.' }),
         ]),
         ui.lobbyCrew,
         el('div', { class: 'row' }, buttons),
@@ -201,7 +202,7 @@
     });
     var names = v.crew.map(function (c) { return c.name; });
     ui.lobbyCrew.textContent = names.length === 1
-      ? 'Only you so far. You can start alone, or wait for the crew.'
+      ? 'Only you so far. You can start alone, or wait for the others.'
       : 'On shift: ' + names.join(', ') + '. Anyone can start.';
   }
 
@@ -389,7 +390,7 @@
 
   function renderCovered() {
     setMode('covered', function () {
-      add(screen, [el('div', { class: 'covered-note', text: 'Helmet display down.' })]);
+      add(screen, [el('div', { class: 'covered-note', text: 'Work tablet up.' })]);
     });
   }
 
@@ -405,7 +406,7 @@
     clear(screen);
     var rows = end.crew.map(function (row) {
       var calls = row.handled + row.botched + row.ignored;
-      var detail = calls === 0 ? 'No calls.' : 'Calls: ' + row.handled + ' handled, ' + row.botched + ' botched, ' + row.ignored + ' ignored.';
+      var detail = calls === 0 ? 'No jobs.' : 'Jobs: ' + row.handled + ' handled, ' + row.botched + ' botched, ' + row.ignored + ' ignored.';
       return el('li', { class: row.id === msg.you ? 'me' : null }, [
         el('span', { class: 'end-who', text: row.name }),
         el('span', { class: 'end-pct', text: (row.watched === null ? 0 : row.watched) + '% watched' }),
@@ -419,13 +420,13 @@
         el('h2', { text: end.finale.title }),
         el('p', { class: 'end-summary', text: end.finale.summary }),
         el('p', { class: 'end-rating' }, [
-          el('span', { text: 'Crew rating' }),
+          el('span', { text: 'Shift rating' }),
           el('strong', { text: String(end.rating) }),
           el('span', { text: end.ratingNote }),
         ]),
         el('div', { class: 'row' }, [
           el('button', { class: 'btn-main', type: 'button', text: 'Watch again', on: { click: function () {
-            send(FAST ? { type: 'again', pace: 'fast' } : { type: 'again' });
+            send({ type: 'again' });
           } } }),
         ]),
       ]),
@@ -438,10 +439,10 @@
         ]),
       ]),
     ])]);
-    announce('The end. ' + end.finale.title + '. Crew rating ' + end.rating + '.');
+    announce('The end. ' + end.finale.title + '. Shift rating ' + end.rating + '.');
   }
 
-  // ------------------------------------------------------ the helmet display
+  // ---------------------------------------------------------- the work tablet
 
   function taskButton(label, keyHint, onClick, extra) {
     return el('button', { class: 'task-btn' + (extra ? ' ' + extra : ''), type: 'button', on: { click: onClick } }, [
@@ -488,7 +489,10 @@
     ui.dialValue.textContent = String(task.dial);
   }
 
+  // Builds the controls for a task and sets ui.taskFocus to the control that
+  // should take focus: the one where Enter does the sensible thing.
   function buildTask(em) {
+    ui.taskFocus = null;
     if (em.kind === 'pick') {
       return [el('div', { class: 'task-options' }, em.options.map(function (text, index) {
         return taskButton(text, String(index + 1), function () { answer(index); });
@@ -526,7 +530,7 @@
         el('div', { class: 'keypad' }, digits),
         el('div', { class: 'task-row' }, [
           taskButton('Clear', null, codeClear),
-          taskButton('Send', null, codeSend, 'task-go'),
+          (ui.taskFocus = taskButton('Send', null, codeSend, 'task-go')),
         ]),
       ];
     }
@@ -540,7 +544,7 @@
           ui.dialValue,
           el('button', { class: 'task-btn', type: 'button', 'aria-label': 'Up one', text: '+', on: { click: function () { dialStep(1); } } }),
         ]),
-        taskButton('Set', null, function () { answer(task.dial); }, 'task-go'),
+        (ui.taskFocus = taskButton('Set', null, function () { answer(task.dial); }, 'task-go')),
       ];
     }
     // hold
@@ -603,14 +607,14 @@
       var body = el('div', { class: 'visor-body' }, [el('p', { class: 'visor-prompt', text: em.prompt })].concat(buildTask(em)));
       add(visor, [
         el('div', { class: 'visor-head' }, [
-          el('span', { class: 'visor-kicker', text: 'Client emergency' }),
+          el('span', { class: 'visor-kicker', text: 'Job ticket' }),
           el('h2', { class: 'visor-title', text: em.title }),
           timer,
         ]),
         body,
         el('p', { class: 'visor-foot', text: 'The show is still playing behind this.' }),
       ]);
-      var first = body.querySelector('button');
+      var first = ui.taskFocus || body.querySelector('button');
       if (first) first.focus();
       announce(em.prompt);
     }
@@ -620,9 +624,9 @@
   }
 
   var NOTES = {
-    handled: 'Call closed. Back to the show.',
-    botched: 'Wrong call. Head office noticed.',
-    ignored: 'Call rang out. Crew rating dropped.',
+    handled: 'Job done. Back to the show.',
+    botched: 'Wrong fix. The front desk noticed.',
+    ignored: 'Ticket rang out. Shift rating dropped.',
   };
 
   function renderAlert(v) {
@@ -651,12 +655,12 @@
         var timer = bar();
         ui.alertFill = timer.fill;
         add(alertBox, [el('div', { class: 'alert-box' }, [
-          el('div', { class: 'alert-text' }, [el('span', { class: 'alert-title', text: 'Client emergency: ' + em.title }), timer]),
+          el('div', { class: 'alert-text' }, [el('span', { class: 'alert-title', text: 'Job ticket: ' + em.title }), timer]),
           el('button', { class: 'btn-respond', type: 'button', 'aria-keyshortcuts': 'r', on: { click: function () { send({ type: 'respond' }); } } }, [
             'Respond', el('kbd', { 'aria-hidden': 'true', text: 'R' }),
           ]),
         ])]);
-        announce('Client emergency: ' + em.title + '. Respond, or let it ring.');
+        announce('Job ticket: ' + em.title + '. Respond, or let it ring.');
       } else if (key) {
         add(alertBox, [el('span', { class: 'alert-note', 'data-result': ui.note, text: NOTES[ui.note] })]);
       }
@@ -669,7 +673,7 @@
 
   function renderHud(msg) {
     var v = msg.v;
-    $('unit').textContent = myName ? 'Unit: ' + myName : '';
+    $('unit').textContent = myName ? 'Fixer: ' + myName : '';
     var rating = Math.max(0, Math.min(100, Number(v.rating) || 0));
     $('rating-num').textContent = String(rating);
     $('rating-fill').style.transform = 'scaleX(' + (rating / 100).toFixed(2) + ')';
@@ -698,7 +702,24 @@
 
   // -------------------------------------------------------------------- render
 
+  function renderElsewhere() {
+    setMode('elsewhere', function () {
+      add(screen, [el('div', { class: 'card' }, [
+        el('h2', { text: 'Open in another tab' }),
+        el('p', { class: 'lead', text: 'Your place on the shift is open in another tab or window. Carry on there, or reload this page to bring it back here.' }),
+      ])]);
+    });
+    visor.classList.remove('open');
+    screen.removeAttribute('inert');
+    clear(alertBox);
+    ui.alertKey = '';
+  }
+
   function render() {
+    if (elsewhere) {
+      renderElsewhere();
+      return;
+    }
     if (!latest) {
       app.setAttribute('data-phase', 'join');
       if (room) renderLinking();
@@ -717,9 +738,14 @@
   }
 
   function setLink(status) {
-    var text = { connecting: 'linking', open: 'linked', closed: 'link lost, retrying' }[status] || 'not linked';
+    var text = { connecting: 'linking', open: 'linked', closed: 'link lost, retrying', elsewhere: 'open in another tab' }[status] || 'not linked';
     $('link').setAttribute('data-status', status);
     $('link-text').textContent = text;
+    // 'elsewhere' is final: another tab has this seat and we do not fight it.
+    if (status === 'elsewhere') {
+      elsewhere = true;
+      render();
+    }
   }
 
   function join(name) {
@@ -749,11 +775,10 @@
   // ------------------------------------------------------------------ keyboard
 
   document.addEventListener('keydown', function (event) {
-    if (!latest || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!latest || elsewhere || event.ctrlKey || event.metaKey || event.altKey) return;
     var target = event.target;
     var tag = target && target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    var onButton = tag === 'BUTTON' || tag === 'SUMMARY';
     var v = latest.v;
     var em = v.emergency;
     var key = event.key;
@@ -765,12 +790,12 @@
       else if (em.kind === 'code') {
         if (/^[0-9]$/.test(key)) codeType(key);
         else if (key === 'Backspace') codeClear();
-        else if (key === 'Enter' && !onButton) codeSend();
+        else if (key === 'Enter') codeSend(); // from anywhere in the task, even on a digit
         else return;
       } else if (em.kind === 'dial') {
         if (key === 'ArrowUp' || key === 'ArrowRight' || key === '+') dialStep(1);
         else if (key === 'ArrowDown' || key === 'ArrowLeft' || key === '-') dialStep(-1);
-        else if (key === 'Enter' && !onButton) answer(task.dial);
+        else if (key === 'Enter') answer(task.dial);
         else return;
       } else return;
       event.preventDefault();

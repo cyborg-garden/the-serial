@@ -6,6 +6,7 @@
  *     name: 'Ana',
  *     onView: function (msg) { ... },     // { you, players, v }
  *     onStatus: function (status) { ... } // 'connecting' | 'open' | 'closed'
+ *                                         // | 'elsewhere' (open in another tab; final)
  *     onError: function (text) { ... }
  *   });
  *   room.send({ type: 'vote', for: 3 });
@@ -86,6 +87,8 @@
   }
 
   function connect(game, options) {
+    // The secret key for this browser's seat. It goes to the server and
+    // nowhere else; the seat label other players see comes back as msg.you.
     var id = store('arcade-rooms-id', function () { return randomId(20); });
     var socket = null;
     var closed = false;
@@ -110,9 +113,15 @@
         if (msg.t === 'error' && options.onError) options.onError(msg.m);
       };
       socket.onclose = function (event) {
+        // 4000: this player opened the game in another tab, which now owns
+        // the seat. Say so, and do not fight the other tab for it.
+        if (event.code === 4000) {
+          closed = true;
+          status('elsewhere');
+          return;
+        }
         status('closed');
-        // 4000: this player opened the game in another tab, which now owns it.
-        if (closed || event.code === 4000) return;
+        if (closed) return;
         setTimeout(open, wait);
         wait = Math.min(wait * 2, 8000);
       };
@@ -120,7 +129,6 @@
     open();
 
     return {
-      id: id,
       send: function (data) {
         if (socket && socket.readyState === 1) socket.send(JSON.stringify({ t: 'msg', d: data }));
       },

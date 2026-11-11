@@ -59,9 +59,9 @@ button:disabled { cursor: default; opacity: 0.6; }
   border: 0;
 }
 
-/* ------------------------------------------------------------ helmet frame */
+/* -------------------------------------------- the frame: a work tablet's edge */
 
-.helmet {
+.tablet {
   height: 100vh;
   height: 100dvh;
   display: grid;
@@ -115,6 +115,7 @@ button:disabled { cursor: default; opacity: 0.6; }
 .link[data-status='open'] .link-dot { background: #58e08a; }
 .link[data-status='connecting'] .link-dot { background: var(--amber); }
 .link[data-status='closed'] .link-dot { background: var(--bad); }
+.link[data-status='elsewhere'] .link-dot { background: #5a6b6c; }
 
 .viewport {
   position: relative;
@@ -142,7 +143,7 @@ button:disabled { cursor: default; opacity: 0.6; }
   background: repeating-linear-gradient(to bottom, transparent 0 2px, rgba(0, 0, 0, 0.15) 2px 3px);
 }
 
-.hud-bottom { padding: 0 6px; align-items: stretch; }
+.hud-bottom { padding: 0 6px; align-items: stretch; flex-wrap: nowrap; }
 
 .crew {
   list-style: none;
@@ -464,7 +465,7 @@ kbd {
 .result-label { margin: 0; font: italic 700 clamp(16px, 3.4vmin, 20px)/1.2 var(--show-font); color: var(--gold); }
 .result-note { margin: 0; font: 12px var(--hud-font); color: var(--hud-dim); }
 
-/* ------------------------------------------------------- the helmet display */
+/* ---------------------------------------------------------- the work tablet */
 
 .visor {
   position: absolute;
@@ -545,7 +546,7 @@ kbd {
 .hold-btn.down { background: var(--amber); color: #241300; }
 .hold-bar { width: min(100%, 22em); height: 10px; color: var(--amber); }
 
-.scope { width: min(46vmin, 200px); aspect-ratio: 1; display: block; }
+.scope { width: min(40vmin, 180px); aspect-ratio: 1; display: block; }
 .scope-ring { fill: #0c1a10; stroke: #3f8f4f; stroke-width: 1; }
 .scope-grid { stroke: #24552f; stroke-width: 0.6; fill: none; }
 .scope-blip { fill: #8dffa6; }

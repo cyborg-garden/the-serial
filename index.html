@@ -8,13 +8,13 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main id="app" class="helmet" data-phase="join">
+<main id="app" class="tablet" data-phase="join">
   <header class="hud hud-top">
     <span class="hud-name">The Serial</span>
     <span class="hud-unit" id="unit"></span>
     <span class="hud-gap"></span>
     <span class="hud-stat" id="rating-box">
-      <span class="hud-label" id="rating-label">Crew rating</span>
+      <span class="hud-label" id="rating-label">Shift rating</span>
       <span class="meter" id="rating" role="meter" aria-labelledby="rating-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="meter-fill" id="rating-fill"></span></span>
       <span class="hud-num" id="rating-num">100</span>
     </span>
@@ -27,11 +27,11 @@
 
   <section class="viewport">
     <div class="screen" id="screen" tabindex="-1"></div>
-    <div class="visor" id="visor" role="dialog" aria-label="Client emergency"></div>
+    <div class="visor" id="visor" role="dialog" aria-label="Job ticket"></div>
   </section>
 
   <footer class="hud hud-bottom">
-    <ul class="crew" id="crew" aria-label="Crew"></ul>
+    <ul class="crew" id="crew" aria-label="On shift"></ul>
     <div class="alert" id="alert"></div>
   </footer>
 
