@@ -7,6 +7,11 @@
  *     onView: function (msg) { ... },     // { you, players, v }
  *     onStatus: function (status) { ... } // 'connecting' | 'open' | 'closed'
  *                                         // | 'elsewhere' (open in another tab; final)
+ *                                         // | 'refused' (this Discord server is
+ *                                         //   not let in; comes just after a
+ *                                         //   brief 'open', is final, and is
+ *                                         //   followed by onError with
+ *                                         //   ArcadeRooms.NOT_OPEN)
  *     onError: function (text) { ... }
  *   });
  *   room.send({ type: 'vote', for: 3 });
@@ -20,6 +25,11 @@
  * Where the server is: inside Discord it is this same host under /rt (a URL
  * mapping in the developer portal). Otherwise window.ARCADE_ROOMS_URL, which
  * a game sets in its own config.js, or this host when running locally.
+ *
+ * Which Discord server: Discord's guild_id launch parameter goes on the
+ * socket URL as ?guild=, and the server only lets in the servers on its
+ * list. That id comes from this page, so it is a soft gate, not security.
+ * A DM launch has no guild_id and is refused; so is an unlisted server.
  */
 (function () {
   function param(name) {
@@ -61,6 +71,15 @@
     return out;
   }
 
+  /** Discord's server id for this launch, or null (a DM, or not in Discord). */
+  function guild() {
+    var raw = param('guild_id');
+    return raw && /^[0-9]{17,20}$/.test(raw) ? raw : null;
+  }
+
+  // What a player sees when the server turns this Discord server away.
+  var NOT_OPEN = "This arcade isn't open in this server yet. Ask Cyborg Garden to add it.";
+
   var roomId = null;
   function room() {
     if (roomId) return roomId;
@@ -100,7 +119,8 @@
     function open() {
       if (closed) return;
       status('connecting');
-      socket = new WebSocket(base() + '/rt/' + game + '/' + room());
+      var g = guild();
+      socket = new WebSocket(base() + '/rt/' + game + '/' + room() + (g ? '?guild=' + g : ''));
       socket.onopen = function () {
         wait = 500;
         socket.send(JSON.stringify({ t: 'hello', id: id, name: name }));
@@ -118,6 +138,14 @@
         if (event.code === 4000) {
           closed = true;
           status('elsewhere');
+          return;
+        }
+        // 4003: this Discord server is not on the server's list. Final; a
+        // retry would only be refused again.
+        if (event.code === 4003) {
+          closed = true;
+          status('refused');
+          if (options.onError) options.onError(NOT_OPEN);
           return;
         }
         status('closed');
@@ -144,6 +172,7 @@
     connect: connect,
     inDiscord: inDiscord,
     room: room,
+    NOT_OPEN: NOT_OPEN,
     inviteLink: function () {
       var url = new URL(location.href);
       url.searchParams.set('room', room());
