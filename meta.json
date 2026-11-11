@@ -2,7 +2,10 @@
   "title": "The Serial",
   "tagline": "Do your job, or watch your show.",
   "blurb": "You are the night shift on Marrowlight Station, and the soap opera set on your own station is on. Watch it together and vote on what happens next, while small job tickets try to drag you away. Take a job and your work tablet covers the good bits. Let it ring out and the shift rating sinks. For 1 to 8 players, about six minutes.",
-  "status": "draft",
+  "status": "published",
   "updated": "2026-11-11",
-  "source": "https://github.com/cyborg-garden/the-serial"
+  "source": "https://github.com/cyborg-garden/the-serial",
+  "surfaces": [
+    "discord"
+  ]
 }
