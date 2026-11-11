@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>The Serial</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main id="app" class="helmet" data-phase="join">
+  <header class="hud hud-top">
+    <span class="hud-name">The Serial</span>
+    <span class="hud-unit" id="unit"></span>
+    <span class="hud-gap"></span>
+    <span class="hud-stat" id="rating-box">
+      <span class="hud-label" id="rating-label">Crew rating</span>
+      <span class="meter" id="rating" role="meter" aria-labelledby="rating-label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><span class="meter-fill" id="rating-fill"></span></span>
+      <span class="hud-num" id="rating-num">100</span>
+    </span>
+    <span class="hud-stat">
+      <span class="hud-label">Watched</span>
+      <span class="hud-num" id="watched">--</span>
+    </span>
+    <span class="link" id="link" data-status="idle"><span class="link-dot" aria-hidden="true"></span><span id="link-text">not linked</span></span>
+  </header>
+
+  <section class="viewport">
+    <div class="screen" id="screen" tabindex="-1"></div>
+    <div class="visor" id="visor" role="dialog" aria-label="Client emergency"></div>
+  </section>
+
+  <footer class="hud hud-bottom">
+    <ul class="crew" id="crew" aria-label="Crew"></ul>
+    <div class="alert" id="alert"></div>
+  </footer>
+
+  <div class="sr-only" id="live" aria-live="polite"></div>
+</main>
+<noscript>The Serial needs JavaScript to run.</noscript>
+<script src="config.js"></script>
+<script src="rooms-client.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
