@@ -580,6 +580,9 @@ kbd {
 .end-pct { font: 700 15px var(--hud-font); color: var(--gold); }
 .end-verdict { grid-column: 1 / -1; color: var(--paper-dim); font-size: 13px; }
 .end-choices { margin: 0; padding-left: 1.2em; color: var(--paper-dim); font-size: 13px; display: grid; gap: 1px; }
+.end-badge { display: grid; gap: 4px; margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--paper-dim); }
+.end-code { font: 13px var(--hud-font); color: var(--hud); overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; }
+.end-where { font: 11px var(--hud-font); letter-spacing: 0.08em; color: var(--paper-dim); }
 .end details summary { cursor: pointer; color: var(--hud); font: 12px var(--hud-font); padding: 4px 0; }
 
 .covered-note { min-height: 100%; display: grid; place-content: center; color: #5a4a66; font: 12px var(--hud-font); }

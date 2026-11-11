@@ -437,6 +437,13 @@
           el('summary', { text: 'How the room voted' }),
           el('ol', { class: 'end-choices' }, choices),
         ]),
+        // The staff badge: signed by the rooms server, so it cannot be made
+        // here. Crews bring theirs to the green room on cyborg.garden.
+        typeof v.code === 'string' ? el('div', { class: 'end-badge' }, [
+          el('p', { class: 'end-kicker', text: 'Staff badge' }),
+          el('p', { class: 'end-code', text: v.code }),
+          el('p', { class: 'end-where', text: 'cyborg.garden/green-room' }),
+        ]) : null,
       ]),
     ])]);
     announce('The end. ' + end.finale.title + '. Shift rating ' + end.rating + '.');
