@@ -8,8 +8,10 @@
  *     onStatus: function (status) { ... } // 'connecting' | 'open' | 'closed'
  *                                         // | 'elsewhere' (open in another tab; final)
  *                                         // | 'refused' (this Discord server is
- *                                         //   not let in; final, then onError
- *                                         //   with ArcadeRooms.NOT_OPEN)
+ *                                         //   not let in; comes just after a
+ *                                         //   brief 'open', is final, and is
+ *                                         //   followed by onError with
+ *                                         //   ArcadeRooms.NOT_OPEN)
  *     onError: function (text) { ... }
  *   });
  *   room.send({ type: 'vote', for: 3 });
