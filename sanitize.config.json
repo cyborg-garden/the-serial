@@ -1,0 +1,29 @@
+{
+  "$comment": "Sanitization gate config for the-serial. The gate itself lives in cyborg-garden/swarm-map (docs/sanitization-gate.md); this file only says what a particular means here.",
+  "package_name": "the-serial",
+  "package_kind": "public browser game",
+  "sensitive_prefixes": [
+    ".github/"
+  ],
+  "$comment_prefixes": "This repo is flat: the game is top-level files, which the secrets and PII layer scans in full. The gate needs one directory prefix; .github/ is the only directory. Top-level *.md are always included in the semantic layer.",
+  "semantic": {
+    "domain_noun": "real person or private deployment",
+    "flag_examples": [
+      "a real private individual written into the game or its notes",
+      "deploy details of one machine or account: hostnames, tokens, room server secrets",
+      "contact details of a private individual: personal email, phone number, home address, messaging handle or account ID",
+      "credentials, tokens, internal hostnames, server addresses or chat/group IDs of a real deployment"
+    ],
+    "do_not_flag_examples": [
+      "the publishing organisation and its public projects: Cyborg Garden / cyborg-garden / cyborg.garden, the former names NimbleCo / NimbleCoAI / NimbleCoOrg / nimbleco.ai, this repo's own name and GitHub URLs",
+      "the game's fictional characters, places and text",
+      "generic tool, API, library, model, provider and standard names, and public reference material",
+      "clearly fictional placeholders (Subject A, <case>, example.com, <host>)"
+    ],
+    "model": "moonshotai/kimi-k3"
+  },
+  "deterministic": {
+    "enabled": true,
+    "allow_substrings": []
+  }
+}
